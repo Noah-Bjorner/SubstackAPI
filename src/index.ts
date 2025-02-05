@@ -1,18 +1,42 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.toml`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { middleware } from './middleware/middleware';
 
-export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		return new Response('Hello World!');
-	},
-} satisfies ExportedHandler<Env>;
+import apiKeyRoutes from './endpoints/apiKey/routes';
+import postsRoutes from './endpoints/posts/routes';
+
+export interface AppBindings {
+    Bindings: Env;
+    Variables: {
+        accessibleSite: string;
+    }
+}	
+const app = new Hono<AppBindings>();
+
+app.use('/*', cors({
+	origin: '*',
+	allowMethods: ['GET'],
+	allowHeaders: ['Content-Type'],
+	exposeHeaders: [
+		'Content-Type', 
+		'X-Cache-Status', 
+		'X-RateLimit-Limit', 
+		'X-RateLimit-Remaining', 
+		'X-RateLimit-Reset', 
+		'X-RateLimit-Database',
+		'X-RateLimit-Policy',
+		'Retry-After',
+		'X-API-Key-Created-At',
+		'X-API-Key-Status',
+	],
+	credentials: false,
+}));
+
+app.use('/*', middleware()); // Don't apply middleware to api_key routes, implement more sophisticated middleware later
+
+app.route('/api_key', apiKeyRoutes);
+app.route('/', postsRoutes);
+
+
+
+export default app
