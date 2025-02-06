@@ -9,7 +9,7 @@ export const middleware = () => {
         try {
             const apiKeyInformation = await validateApiKey(c);
             await validateRateLimit(c, apiKeyInformation.rateLimitConfig);
-            c.set('accessibleSite', apiKeyInformation.accessibleSite);
+            c.set('allowedPublication', apiKeyInformation.allowedPublication);
             await next();
         } catch (error) {
             const {message, statusCode, headers } = handleEndpointError(error)

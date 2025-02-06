@@ -8,9 +8,9 @@ const postsRoutes = new Hono<AppBindings>();
 postsRoutes.get('/posts/search', async (c) => {
 	const LOG_IDENTIFIER = 'search_posts_endpoint'
 	try {
-		const {substack_url, query} = c.req.query()
-		const posts = await getSearchedPosts(substack_url, query, c.env, c.executionCtx as ExecutionContext)
-		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: posts.metadata.source, substack_url: posts.metadata.substack_url, posts_count: posts.data.length})
+		const { publication_url, query } = c.req.query()
+		const posts = await getSearchedPosts(c, publication_url, query)
+		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: posts.metadata.source, publication_url: posts.metadata.publication_url, posts_count: posts.data.length})
 		return c.json(posts)
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)
@@ -22,9 +22,9 @@ postsRoutes.get('/posts/search', async (c) => {
 postsRoutes.get('/posts/top', async (c) => {
 	const LOG_IDENTIFIER = 'top_posts_endpoint'
 	try {
-		const {substack_url} = c.req.query()
-		const posts = await getPosts(substack_url, 'top', c.env, c.executionCtx as ExecutionContext)
-		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: posts.metadata.source, substack_url: posts.metadata.substack_url, posts_count: posts.data.length})
+		const { publication_url } = c.req.query()
+		const posts = await getPosts(c,publication_url, 'top')
+		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: posts.metadata.source, publication_url: posts.metadata.publication_url, posts_count: posts.data.length})
 		return c.json(posts)
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)
@@ -36,9 +36,9 @@ postsRoutes.get('/posts/top', async (c) => {
 postsRoutes.get('/posts/latest', async (c) => {
 	const LOG_IDENTIFIER = 'latest_posts_endpoint'
 	try {
-		const {substack_url} = c.req.query()
-		const posts = await getPosts(substack_url, 'new', c.env, c.executionCtx as ExecutionContext)
-		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: posts.metadata.source, substack_url: posts.metadata.substack_url, posts_count: posts.data.length})
+		const { publication_url } = c.req.query()
+		const posts = await getPosts(c, publication_url, 'new')
+		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: posts.metadata.source, publication_url: posts.metadata.publication_url, posts_count: posts.data.length})
 		return c.json(posts)
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)
@@ -51,9 +51,9 @@ postsRoutes.get('/posts/latest', async (c) => {
 postsRoutes.get('/post', async (c) => {
 	const LOG_IDENTIFIER = 'post_endpoint'
 	try {
-		const {substack_url, slug} = c.req.query()
-		const post = await getPost(substack_url, slug, c.env,c.executionCtx as ExecutionContext)
-		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: post.metadata.source, substack_url: post.metadata.substack_url})
+		const { publication_url, slug } = c.req.query()
+		const post = await getPost(c, publication_url, slug)
+		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: post.metadata.source, publication_url: post.metadata.publication_url})
 		return c.json(post)
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)

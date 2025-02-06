@@ -10,11 +10,11 @@ export type ApiKeyMetadata = {
     status: 'active' | 'inactive' | 'unverified'
     createdAt: string
     issuedTo: string
-    accessibleSite: string
+    allowedPublication: string
 }
 
-export async function getNewApiKey(env: Env, issuedTo: string, accessible_site: string) {
-    const apiKey = generateApiKey('live', issuedTo, true, accessible_site)
+export async function getNewApiKey(env: Env, issuedTo: string, allowedPublication: string) {
+    const apiKey = generateApiKey('live', issuedTo, true, allowedPublication)
     await storeApiKeyInCache(apiKey, env)
     return apiKey
 }
@@ -26,10 +26,10 @@ export function getKey(apiKey: string) {
 async function storeApiKeyInCache(apiKey: ApiKey, env: Env) {
     const key = getKey(apiKey.key)
     const value = apiKey.metadata
-    await storeInCache(key, value, env, undefined, false, false)
+    await storeInCache(key, value, env, undefined, false)
 }
 
-function generateApiKey(keyType: ApiKey['metadata']['type'], issuedTo: string, needsVerification: boolean = true, accessibleSite: string): ApiKey {    
+function generateApiKey(keyType: ApiKey['metadata']['type'], issuedTo: string, needsVerification: boolean = true, allowedPublication: string): ApiKey {    
     const prefix = `sk_${keyType}`;
     const randomPart = crypto.randomUUID().replace(/-/g, '');
     const key = `${prefix}_${randomPart}`;
@@ -37,7 +37,7 @@ function generateApiKey(keyType: ApiKey['metadata']['type'], issuedTo: string, n
     return {
         key,
         metadata: {
-            accessibleSite,
+            allowedPublication,
             type: keyType,
             status,
             createdAt: new Date().toISOString(),

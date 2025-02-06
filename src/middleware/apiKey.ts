@@ -7,7 +7,7 @@ import { AppBindings } from '../index';
 
 interface ApiKeyInformation {
     rateLimitConfig: RateLimitConfig;
-    accessibleSite: string;
+    allowedPublication: string;
 }
 
 export async function validateApiKey(c: Context<AppBindings>): Promise<ApiKeyInformation> {
@@ -32,21 +32,21 @@ export async function validateApiKey(c: Context<AppBindings>): Promise<ApiKeyInf
         throw new HTTPError('Inactive API key', 403);
     }
 
-    const accessibleSite = result.accessibleSite;
-    if (!accessibleSite) {
-        throw new HTTPError('Inactive API key', 403);
+    const allowedPublication = result.allowedPublication;
+    if (!allowedPublication) {
+        throw new HTTPError('Allowed publication not found for API key', 403);
     }
 
     c.header('X-API-Key-Created-At', result.createdAt);
     c.header('X-API-Key-Status', result.status);
-    c.header('X-API-Key-Accessible-Site', accessibleSite);
+    c.header('X-API-Key-Allowed-Publication', allowedPublication);
 
     const path = c.req.path;
     const rateLimitConfig = getRateLimitConfig(path, apiKey);
 
     return {
         rateLimitConfig,
-        accessibleSite
+        allowedPublication
     }
 
 }

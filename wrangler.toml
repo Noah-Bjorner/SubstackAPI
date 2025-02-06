@@ -3,7 +3,6 @@ name = "substack-api-worker"
 main = "src/index.ts"
 compatibility_date = "2025-01-09"
 
-
 [observability]
 enabled = true
 head_sampling_rate = 1

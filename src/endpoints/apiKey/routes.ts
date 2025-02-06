@@ -5,13 +5,11 @@ import { AppBindings } from '../../index';
 
 const apiKeyRoutes = new Hono<AppBindings>();
 
-// 3 per day rate limit + use public api key
-
 apiKeyRoutes.get('/generate', async (c) => {
 	const LOG_IDENTIFIER = 'generate_api_key_endpoint'
 	try {
-		const { email, accessible_site } = c.req.query()
-		const apiKey = await getNewApiKey(c.env, email, accessible_site)
+		const { email, allowed_publication } = c.req.query()
+		const apiKey = await getNewApiKey(c.env, email, allowed_publication)
         console.log({event: LOG_IDENTIFIER, status: 'success', issuedTo: apiKey.metadata.issuedTo})
         return c.text(apiKey.key)
 	} catch (error) {
@@ -19,11 +17,6 @@ apiKeyRoutes.get('/generate', async (c) => {
         console.error({event: LOG_IDENTIFIER, status: 'failed', error: message, errorCode: statusCode})
 		return c.json({error: message}, statusCode)
 	}
-})
-
-apiKeyRoutes.get('/accessible_site', async (c) => {
-	const accessibleSite = c.get('accessibleSite')
-    return c.json({message: `Accessible site: ${accessibleSite}`})
 })
 
 

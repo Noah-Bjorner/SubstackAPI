@@ -8,14 +8,14 @@ import postsRoutes from './endpoints/posts/routes';
 export interface AppBindings {
     Bindings: Env;
     Variables: {
-        accessibleSite: string;
+        allowedPublication?: string;
     }
 }	
 const app = new Hono<AppBindings>();
 
 app.use('/*', cors({
 	origin: '*',
-	allowMethods: ['GET'],
+	allowMethods: ['GET', 'POST'],
 	allowHeaders: ['Content-Type'],
 	exposeHeaders: [
 		'Content-Type', 
@@ -28,15 +28,13 @@ app.use('/*', cors({
 		'Retry-After',
 		'X-API-Key-Created-At',
 		'X-API-Key-Status',
+		'X-API-Key-Allowed-Publication',
 	],
 	credentials: false,
 }));
 
-app.use('/*', middleware()); // Don't apply middleware to api_key routes, implement more sophisticated middleware later
-
+app.use('/*', middleware());
 app.route('/api_key', apiKeyRoutes);
 app.route('/', postsRoutes);
-
-
 
 export default app

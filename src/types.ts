@@ -12,7 +12,7 @@ export interface SubstackPost {
     paywall: boolean
     cover_image: {
         original: string | null,
-        og: string | null, // 1200x630
+        og: string | null, // 1200x630px
         small: string | null, // 150px
         medium: string | null, // 424px
         large: string | null, // 848px
@@ -40,7 +40,7 @@ export interface JSONSuccessResponse<T> {
     metadata: {
         timestamp: number
         source?: string
-        substack_url?: string
+        publication_url?: string
         posts_count?: number
     }
 }

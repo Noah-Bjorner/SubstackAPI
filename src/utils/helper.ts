@@ -1,4 +1,4 @@
-export const validateSubstackUrl = (url: string): string | null => {
+export const validateSubstackPublicationURL = (url: string): string | null => {
     if (!url) return null
     const cleanUrl = url.trim().toLowerCase()
     if (cleanUrl.startsWith('https://')) return cleanUrl

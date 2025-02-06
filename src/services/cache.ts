@@ -8,12 +8,11 @@ export const storeInCache = async (
     value: any, 
     env: Env,
     expirationSeconds: number = 30,
-    hasExpiration: boolean = true,
     compress: boolean = true    
 ) => {
     try {
         const valueToStore = compress ? await compressData(value) : value;
-        if (hasExpiration) {
+        if (expirationSeconds) {
             await redis(env).set(key, valueToStore, { ex: expirationSeconds });
         } else {
             await redis(env).set(key, valueToStore);

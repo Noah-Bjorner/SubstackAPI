@@ -14,13 +14,13 @@ import { getErrorMessage } from '../utils/errors'
 // Substack Unofficial API
 
 export async function getSubstackPostsViaAPI(
-    substackUrl: string,
+    publicationURL: string,
     sortBy: 'new' | 'top' = 'new',
     offset: number = 0,
     limit: number = 12
 ): Promise<SubstackPost[] | null> {
     try {
-        const url = `${substackUrl}/api/v1/archive?sort=${sortBy}&offset=${offset}&limit=${limit}`
+        const url = `${publicationURL}/api/v1/archive?sort=${sortBy}&offset=${offset}&limit=${limit}`
         const response = await fetch(url)
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -69,9 +69,9 @@ export async function getSubstackPostsViaAPI(
     }
 }
 
-export async function getSubstackPostViaAPI(substackUrl: string, slug: string): Promise<SubstackPost | null> {
+export async function getSubstackPostViaAPI(publicationURL: string, slug: string): Promise<SubstackPost | null> {
     try {
-        const url = `${substackUrl}/api/v1/posts/${slug}`
+        const url = `${publicationURL}/api/v1/posts/${slug}`
         const response = await fetch(url)
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -128,9 +128,9 @@ export async function getSubstackPostViaAPI(substackUrl: string, slug: string): 
 
 // Substack RSS Feed
 
-export async function getSubstackPostsViaRSS(substackUrl: string): Promise<SubstackPost[] | null> {
+export async function getSubstackPostsViaRSS(publicationURL: string): Promise<SubstackPost[] | null> {
     try {
-        const url = `${substackUrl}/feed`
+        const url = `${publicationURL}/feed`
         const response = await fetch(url)
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -190,9 +190,9 @@ export async function getSubstackPostsViaRSS(substackUrl: string): Promise<Subst
     }
 }
 
-export async function getSubstackPostViaRSS(substackUrl: string, slug: string): Promise<SubstackPost | null> {
+export async function getSubstackPostViaRSS(publicationURL: string, slug: string): Promise<SubstackPost | null> {
     try {
-        const data = await getSubstackPostsViaRSS(substackUrl)
+        const data = await getSubstackPostsViaRSS(publicationURL)
         return data?.find((post: SubstackPost) => post.slug === slug) || null
     } catch (error) {
         console.error({ event: `failed_to_process_post_via_rss`, error: getErrorMessage(error) });

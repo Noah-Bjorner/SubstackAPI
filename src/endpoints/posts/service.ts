@@ -1,3 +1,5 @@
+import { Context } from 'hono';
+import { AppBindings } from '../../index';
 import { JSONSuccessResponse, SubstackPost } from '../../types'
 import {
     getSubstackPostsViaAPI,
@@ -7,97 +9,112 @@ import {
 } from '../../services/substack'
 import { getFromCache, storeInCache } from '../../services/cache'
 import { getErrorMessage, HTTPError } from '../../utils/errors';
-import { validateSubstackSlug, validateSubstackUrl } from '../../utils/helper';
+import { validateSubstackSlug, validateSubstackPublicationURL } from '../../utils/helper';
 import { searchPosts } from '../../services/search';
 
 
-
-export async function getSearchedPosts(substackUrl: string, query: string, env: Env, ctx: ExecutionContext) {
-    try {
-        const validatedSubstackUrl = validateSubstackUrl(substackUrl)
-        if (!validatedSubstackUrl) {
-            throw new HTTPError('Invalid substack url', 400)
-        }
-        if (query.length < 2) {
-            throw new HTTPError('Query must be at least 2 characters long', 400)
-        }
-        const {posts, source: postsSource} = await getAllPosts(validatedSubstackUrl, env, ctx)
-        const searchedPosts = searchPosts(posts, query)
-        const response = createPostsListResponse(searchedPosts, postsSource, validatedSubstackUrl)
-        return response
-    } catch (error) {
-        throw new HTTPError(`Unexpected error for "${substackUrl}" with query "${query}. Error: ${getErrorMessage(error)}"`, 500)
+export async function getSearchedPosts(c: Context<AppBindings>, publicationURL: string, query: string) {
+    
+    if (!hasAccessToPublication(c, publicationURL)) {
+        throw new HTTPError('API key does not have access to this substack publication.', 403)
     }
+
+    const validatedPublicationURL = validateSubstackPublicationURL(publicationURL)
+    if (!validatedPublicationURL) {
+        throw new HTTPError('Invalid publication url', 400)
+    }
+    
+    if (query.length < 2) {
+        throw new HTTPError('Query must be at least 2 characters long', 400)
+    }
+    
+    const env = c.env
+    const ctx = c.executionCtx as ExecutionContext
+    
+    const {posts, source: postsSource} = await getAllPosts(validatedPublicationURL, env, ctx)
+    const searchedPosts = searchPosts(posts, query)
+    const response = createPostsListResponse(searchedPosts, postsSource, validatedPublicationURL)
+    return response
 }
 
 
 
 
 
-export async function getPosts(substackUrl: string, sort: 'new' | 'top', env: Env, ctx: ExecutionContext): Promise<JSONSuccessResponse<SubstackPost[]>>  {
-    try {
-        const validatedSubstackUrl = validateSubstackUrl(substackUrl)
-        if (!validatedSubstackUrl) {
-            throw new HTTPError('Invalid substack url', 400)
-        }
-
-        const cacheKey = `results:${validatedSubstackUrl}:posts:${sort}`
-        const cachedResults = await getFromCache(cacheKey, env) as SubstackPost[]
-        if (cachedResults) {
-            const response = createPostsListResponse(cachedResults, 'cache', validatedSubstackUrl)
-            return response
-        }
-
-        const {posts, source: postsSource} = await getAllPosts(validatedSubstackUrl, env, ctx)
-
-        const sortedPostsLimit = 25
-        const sortedPosts = sortPosts(posts, sort, sortedPostsLimit)
-        if (!sortedPosts) {
-            throw new HTTPError(`Posts not found for "${validatedSubstackUrl}" after trying cache`, 404)
-        }
-
-        tryStoreInCache(cacheKey, sortedPosts, env, sort === 'new' ? '12h' : '7d', ctx)
-        const response = createPostsListResponse(sortedPosts, postsSource, validatedSubstackUrl)
-        return response
-    } catch (error) {
-        throw new HTTPError(`Unexpected error for "${substackUrl}" with sort "${sort}". Error: ${getErrorMessage(error)}`, 500)
+export async function getPosts(c: Context<AppBindings>, publicationURL: string, sort: 'new' | 'top'): Promise<JSONSuccessResponse<SubstackPost[]>>  {
+    
+    if (!hasAccessToPublication(c, publicationURL)) {
+        throw new HTTPError('API key does not have access to this substack publication.', 403)
     }
+
+    const validatedPublicationURL = validateSubstackPublicationURL(publicationURL)
+    if (!validatedPublicationURL) {
+        throw new HTTPError('Invalid publication url', 400)
+    }
+
+    const env = c.env
+    const ctx = c.executionCtx as ExecutionContext
+
+    const cacheKey = `results:${validatedPublicationURL}:posts:${sort}`
+    const cachedResults = await getFromCache(cacheKey, env) as SubstackPost[]
+    if (cachedResults) {
+        const response = createPostsListResponse(cachedResults, 'cache', validatedPublicationURL)
+        return response
+    }
+
+    const {posts, source: postsSource} = await getAllPosts(validatedPublicationURL, env, ctx)
+
+    const sortedPostsLimit = 25
+    const sortedPosts = sortPosts(posts, sort, sortedPostsLimit)
+    if (!sortedPosts) {
+        throw new HTTPError(`Posts not found for "${validatedPublicationURL}" after trying cache`, 404)
+    }
+
+    tryStoreInCache(cacheKey, sortedPosts, env, sort === 'new' ? '12h' : '7d', ctx)
+    const response = createPostsListResponse(sortedPosts, postsSource, validatedPublicationURL)
+    return response
+    
 }
 
 
 
 
 
-export async function getPost(substackUrl: string, slug: string, env: Env, ctx: ExecutionContext): Promise<JSONSuccessResponse<SubstackPost>> {
-    try {
-        const validatedSubstackUrl = validateSubstackUrl(substackUrl)
-        const validatedSlug = validateSubstackSlug(slug)
-        if (!validatedSubstackUrl || !validatedSlug) {
-            throw new HTTPError('Invalid parameters', 400)
-        }
-
-        const cacheKey = `results:${validatedSubstackUrl}:post:${validatedSlug}`
-        const cachedResult = await getFromCache(cacheKey, env) as SubstackPost
-        if (cachedResult) {
-            return createPostResponse(cachedResult, 'cache', validatedSubstackUrl)
-        }
-
-        const apiPost = await getSubstackPostViaAPI(validatedSubstackUrl, validatedSlug)
-        if (apiPost) {
-            tryStoreInCache(cacheKey, apiPost, env, '7d', ctx)
-            return createPostResponse(apiPost, 'api', validatedSubstackUrl)
-        }
-
-        const rssPost = await getSubstackPostViaRSS(validatedSubstackUrl, validatedSlug)
-        if (rssPost) {
-            tryStoreInCache(cacheKey, rssPost, env, '7d', ctx)
-            return createPostResponse(rssPost, 'rss', validatedSubstackUrl)
-        }
-
-        throw new HTTPError(`Post not found for "${validatedSubstackUrl}" with slug "${validatedSlug}" after trying cache, API, and RSS`, 404)
-    } catch (error) {
-        throw new HTTPError(`Unexpected error for "${substackUrl}" with slug "${slug}". Error: ${getErrorMessage(error)}`, 500)
+export async function getPost(c: Context<AppBindings>, publicationURL: string, slug: string): Promise<JSONSuccessResponse<SubstackPost>> {
+    
+    if (!hasAccessToPublication(c, publicationURL)) {
+        throw new HTTPError('API key does not have access to this substack publication.', 403)
     }
+
+    const validatedPublicationURL = validateSubstackPublicationURL(publicationURL)
+    const validatedSlug = validateSubstackSlug(slug)
+    
+    if (!validatedPublicationURL || !validatedSlug) {
+        throw new HTTPError('Invalid parameters.', 400)
+    }
+
+    const env = c.env
+    const ctx = c.executionCtx as ExecutionContext
+
+    const cacheKey = `results:${validatedPublicationURL}:post:${validatedSlug}`
+    const cachedResult = await getFromCache(cacheKey, env) as SubstackPost
+    if (cachedResult) {
+        return createPostResponse(cachedResult, 'cache', validatedPublicationURL)
+    }
+
+    const apiPost = await getSubstackPostViaAPI(validatedPublicationURL, validatedSlug)
+    if (apiPost) {
+        tryStoreInCache(cacheKey, apiPost, env, '7d', ctx)
+        return createPostResponse(apiPost, 'api', validatedPublicationURL)
+    }
+
+    const rssPost = await getSubstackPostViaRSS(validatedPublicationURL, validatedSlug)
+    if (rssPost) {
+        tryStoreInCache(cacheKey, rssPost, env, '7d', ctx)
+        return createPostResponse(rssPost, 'rss', validatedPublicationURL)
+    }
+
+    throw new HTTPError(`Post not found for "${validatedPublicationURL}" with slug "${validatedSlug}" after trying cache, API, and RSS`, 404)
 }
 
 
@@ -109,6 +126,17 @@ export async function getPost(substackUrl: string, slug: string, env: Env, ctx: 
 
 
 // HELPER FUNCTIONS
+
+function hasAccessToPublication(c: Context<AppBindings>, publicationURL: string): boolean {
+    const allowedPublication = c.get('allowedPublication')
+    if (!allowedPublication) {
+        return false
+    }
+    if (allowedPublication === '*') {
+        return true
+    }
+    return allowedPublication === publicationURL
+}   
 
 function tryStoreInCache(
     cacheKey: string,
@@ -125,7 +153,7 @@ function tryStoreInCache(
 
     try {
         ctx.waitUntil(
-            storeInCache(cacheKey, cacheValue, env, expirationSeconds, true, true)
+            storeInCache(cacheKey, cacheValue, env, expirationSeconds, true)
             .catch(error => console.error({event: 'try_store_in_cache_failed', error: getErrorMessage(error)}))
         )        
     } catch (error) {
@@ -136,14 +164,14 @@ function tryStoreInCache(
 function createPostResponse(
     data: SubstackPost,
     source: 'cache' | 'api' | 'rss',
-    substackUrl: string
+    publicationURL: string
 ) : JSONSuccessResponse<SubstackPost> {
     return {
         data,
         metadata: {
             timestamp: Date.now(),
             source,
-            substack_url: substackUrl
+            publication_url: publicationURL
         }
     }
 }
@@ -151,44 +179,44 @@ function createPostResponse(
 function createPostsListResponse(
     data: SubstackPost[],
     source: 'cache' | 'api' | 'rss',
-    substackUrl: string
+    publicationURL: string
 ) : JSONSuccessResponse<SubstackPost[]> {
     return {
         data,
         metadata: {
             timestamp: Date.now(),
             source,
-            substack_url: substackUrl,
+            publication_url: publicationURL,
             posts_count: data.length
         }
     }
 }
 
 async function getAllPosts(
-    substackUrl: string,
+    publicationURL: string,
     env: Env,
     ctx: ExecutionContext
 ) : Promise<{posts: SubstackPost[], source: 'cache' | 'api' | 'rss'}> {
 
-    const cacheKey = `posts:${substackUrl}:all`
+    const cacheKey = `posts:${publicationURL}:all`
     const cachedResults = await getFromCache(cacheKey, env) as SubstackPost[]
     if (cachedResults) {
         return {posts: cachedResults, source: 'cache'}
     }
 
-    const apiPosts = await getSubstackPostsViaAPI(substackUrl, 'top', 0, 50)
+    const apiPosts = await getSubstackPostsViaAPI(publicationURL, 'top', 0, 50)
     if (apiPosts) {
         tryStoreInCache(cacheKey, apiPosts, env, '1d', ctx)
         return {posts: apiPosts, source: 'api'} 
     }
 
-    const rssPosts = await getSubstackPostsViaRSS(substackUrl)
+    const rssPosts = await getSubstackPostsViaRSS(publicationURL)
     if (rssPosts) {
         tryStoreInCache(cacheKey, rssPosts, env, '1d', ctx)
         return {posts: rssPosts, source: 'rss'}
     }
 
-    throw new HTTPError(`Posts not found for "${substackUrl}" after trying cache, API, and RSS`, 404)
+    throw new HTTPError(`Posts not found for "${publicationURL}" after trying cache, API, and RSS`, 404)
 }
 
 
