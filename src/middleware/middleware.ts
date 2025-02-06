@@ -1,15 +1,21 @@
 import { Context } from "hono";
-import { validateRateLimit } from "./rateLimit";
-import { validateApiKey } from "./apiKey";
+import { checkRateLimit } from "./rateLimit";
+import { checkApiKey, validateApiKey } from "./apiKey";
 import { handleEndpointError } from "../utils/errors";
 import { AppBindings } from "../index";
+
+
+//does rate limit work?
 
 export const middleware = () => {
     return async (c: Context<AppBindings>, next: () => Promise<void>) => {
         try {
-            const apiKeyInformation = await validateApiKey(c);
-            await validateRateLimit(c, apiKeyInformation.rateLimitConfig);
-            c.set('allowedPublication', apiKeyInformation.allowedPublication);
+            const { apiKey, rateLimitConfig } = await validateApiKey(c);
+            const [allowedPublication, _] = await Promise.all([
+                checkApiKey(c, apiKey),
+                checkRateLimit(c, rateLimitConfig)
+            ]);
+            c.set('allowedPublication', allowedPublication);
             await next();
         } catch (error) {
             const {message, statusCode, headers } = handleEndpointError(error)

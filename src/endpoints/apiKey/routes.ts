@@ -19,5 +19,9 @@ apiKeyRoutes.get('/generate', async (c) => {
 	}
 })
 
+apiKeyRoutes.get('/validate', async (c) => {
+	return c.json({message: 'API key validated. Check the headers for the API key information.'})
+})
+
 
 export default apiKeyRoutes

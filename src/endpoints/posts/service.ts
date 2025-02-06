@@ -13,6 +13,7 @@ import { validateSubstackSlug, validateSubstackPublicationURL } from '../../util
 import { searchPosts } from '../../services/search';
 
 
+
 export async function getSearchedPosts(c: Context<AppBindings>, publicationURL: string, query: string) {
     
     if (!hasAccessToPublication(c, publicationURL)) {
@@ -88,7 +89,7 @@ export async function getPost(c: Context<AppBindings>, publicationURL: string, s
 
     const validatedPublicationURL = validateSubstackPublicationURL(publicationURL)
     const validatedSlug = validateSubstackSlug(slug)
-    
+
     if (!validatedPublicationURL || !validatedSlug) {
         throw new HTTPError('Invalid parameters.', 400)
     }
@@ -129,13 +130,18 @@ export async function getPost(c: Context<AppBindings>, publicationURL: string, s
 
 function hasAccessToPublication(c: Context<AppBindings>, publicationURL: string): boolean {
     const allowedPublication = c.get('allowedPublication')
-    if (!allowedPublication) {
-        return false
-    }
     if (allowedPublication === '*') {
         return true
     }
-    return allowedPublication === publicationURL
+    const validatedAllowedPublication = validateSubstackPublicationURL(allowedPublication || '')
+    if (!validatedAllowedPublication) {
+        return false
+    }
+    const validatedProvidedPublicationURL = validateSubstackPublicationURL(publicationURL)
+    if (!validatedProvidedPublicationURL) {
+        return false
+    }
+    return validatedAllowedPublication === validatedProvidedPublicationURL
 }   
 
 function tryStoreInCache(

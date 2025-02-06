@@ -1,4 +1,6 @@
 import { storeInCache } from '../../services/cache';
+import { validateSubstackPublicationURL } from '../../utils/helper';
+import { HTTPError } from '../../utils/errors';
 
 interface ApiKey {
     key: string
@@ -14,7 +16,11 @@ export type ApiKeyMetadata = {
 }
 
 export async function getNewApiKey(env: Env, issuedTo: string, allowedPublication: string) {
-    const apiKey = generateApiKey('live', issuedTo, true, allowedPublication)
+    const validatedPublication = validateSubstackPublicationURL(allowedPublication)
+    if (!validatedPublication) {
+        throw new HTTPError('Invalid publication url', 400)
+    }
+    const apiKey = generateApiKey('live', issuedTo, true, validatedPublication)
     await storeApiKeyInCache(apiKey, env)
     return apiKey
 }

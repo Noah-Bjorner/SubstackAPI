@@ -76,10 +76,10 @@ export interface RateLimitConfig {
 
 const cache = new Map();
 
-export async function validateRateLimit(c: Context<AppBindings>, config: RateLimitConfig = { requests: 10, window: 60 }) {
-    const ip = c.req.header('cf-connecting-ip') || 'unknown';
+export async function checkRateLimit(c: Context<AppBindings>, config: RateLimitConfig = { requests: 10, window: 60 }) {
+    const ip = c.req.header('cf-connecting-ip');
 
-    if (!ip || ip === 'unknown') {
+    if (!ip) {
         throw new HTTPError('IP address not found', 400);
     }
     

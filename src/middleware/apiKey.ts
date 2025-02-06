@@ -4,10 +4,10 @@ import { getFromCache } from '../services/cache';
 import { getKey, ApiKeyMetadata } from '../endpoints/apiKey/service';
 import { RateLimitConfig } from './rateLimit';
 import { AppBindings } from '../index';
-
+import { validateSubstackPublicationURL } from '../utils/helper';
 interface ApiKeyInformation {
+    apiKey: string;
     rateLimitConfig: RateLimitConfig;
-    allowedPublication: string;
 }
 
 export async function validateApiKey(c: Context<AppBindings>): Promise<ApiKeyInformation> {
@@ -21,6 +21,19 @@ export async function validateApiKey(c: Context<AppBindings>): Promise<ApiKeyInf
         throw new HTTPError('Invalid API key format', 401);
     }
 
+    const path = c.req.path;
+    const rateLimitConfig = getRateLimitConfig(path, apiKey);
+
+    return {
+        apiKey,
+        rateLimitConfig
+    }
+}
+
+
+
+export async function checkApiKey(c: Context<AppBindings>, apiKey: string): Promise<string> {
+
     const cacheKey = getKey(apiKey)
     const result = await getFromCache(cacheKey, c.env, false) as ApiKeyMetadata | null;
 
@@ -32,7 +45,7 @@ export async function validateApiKey(c: Context<AppBindings>): Promise<ApiKeyInf
         throw new HTTPError('Inactive API key', 403);
     }
 
-    const allowedPublication = result.allowedPublication;
+    const allowedPublication = validateSubstackPublicationURL(result.allowedPublication);
     if (!allowedPublication) {
         throw new HTTPError('Allowed publication not found for API key', 403);
     }
@@ -41,15 +54,9 @@ export async function validateApiKey(c: Context<AppBindings>): Promise<ApiKeyInf
     c.header('X-API-Key-Status', result.status);
     c.header('X-API-Key-Allowed-Publication', allowedPublication);
 
-    const path = c.req.path;
-    const rateLimitConfig = getRateLimitConfig(path, apiKey);
-
-    return {
-        rateLimitConfig,
-        allowedPublication
-    }
-
+    return allowedPublication  
 }
+
 
 
 
@@ -59,6 +66,7 @@ export enum ALL_POSSIBLE_PATHS {
     POSTS_SEARCH = '/posts/search',
     POST = '/post',
     API_KEY_GENERATE = '/api_key/generate',
+    API_KEY_VALIDATE = '/api_key/validate',
 }
 
 function getRateLimitConfig(path: string, apiKey: string): RateLimitConfig {
@@ -74,6 +82,8 @@ function getRateLimitConfig(path: string, apiKey: string): RateLimitConfig {
                 return { requests: 15, window: 60 }; // 15 requests per minute
             case ALL_POSSIBLE_PATHS.API_KEY_GENERATE:
                 return { requests: 3, window: 86400 }; // 3 requests per day
+            case ALL_POSSIBLE_PATHS.API_KEY_VALIDATE:
+                return { requests: 5, window: 60 }; // 5 request per minute
         }
     }
 

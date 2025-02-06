@@ -1,5 +1,6 @@
 export const validateSubstackPublicationURL = (url: string): string | null => {
     if (!url) return null
+    if (url.length < 4 || url.length > 80) return null
     const cleanUrl = url.trim().toLowerCase()
     if (cleanUrl.startsWith('https://')) return cleanUrl
     if (cleanUrl.startsWith('http://')) return cleanUrl.replace('http://', 'https://')
@@ -11,6 +12,9 @@ export const validateSubstackSlug = (slug: string): string | null => {
     const cleanSlug = slug.trim().toLowerCase()
     return cleanSlug.startsWith('/') ? cleanSlug.slice(1) : cleanSlug
 }
+
+
+
 
 export const getResizedImage = (imageUrl: string, width: number) => {
     if (!imageUrl) return null;
@@ -66,4 +70,3 @@ export function formatCoverImageColorPaletteColor(color: number[]): string | nul
     const [r, g, b] = color;
     return `rgb(${r}, ${g}, ${b})`;
 }
-
