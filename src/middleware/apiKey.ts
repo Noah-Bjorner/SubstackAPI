@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { HTTPError } from '../utils/errors';
 import { getFromCache } from '../services/cache';
-import { getKey, ApiKeyMetadata } from '../endpoints/apiKey/service';
+import { getKey, ApiKeyMetadata } from '../endpoints/apiKey/logic';
 import { RateLimitConfig } from './rateLimit';
 import { AppBindings } from '../index';
 import { validateSubstackPublicationURL } from '../utils/helper';

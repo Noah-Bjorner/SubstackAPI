@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { handleEndpointError } from '../../utils/errors';
-import { getNewApiKey } from './service';
+import { getNewApiKey } from './logic';
 import { AppBindings } from '../../index';
 
 const apiKeyRoutes = new Hono<AppBindings>();

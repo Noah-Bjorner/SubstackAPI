@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { handleEndpointError } from '../../utils/errors';
-import { getSearchedPosts, getPosts, getPost } from './service';
+import { getSearchedPosts, getPosts, getPost } from './logic';
 import { AppBindings } from '../../index';
 
 const postsRoutes = new Hono<AppBindings>();
