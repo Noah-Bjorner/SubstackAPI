@@ -10,7 +10,7 @@ apiKeyRoutes.get('/generate', async (c) => {
 	try {
 		const { email, allowed_publication } = c.req.query()
 		const apiKey = await getNewApiKey(c.env, email, allowed_publication)
-        console.log({event: LOG_IDENTIFIER, status: 'success', issuedTo: apiKey.metadata.issuedTo})
+        console.log({event: LOG_IDENTIFIER, status: 'succeeded', issuedTo: apiKey.metadata.issuedTo})
         return c.text(apiKey.key)
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)
