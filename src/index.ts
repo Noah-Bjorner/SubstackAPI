@@ -10,7 +10,7 @@ export interface AppBindings {
     Variables: {
         allowedPublication?: string;
     }
-}	
+}
 const app = new Hono<AppBindings>();
 
 app.use('/*', cors({

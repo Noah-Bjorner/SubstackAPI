@@ -38,16 +38,16 @@ export async function checkApiKey(c: Context<AppBindings>, apiKey: string): Prom
     const result = await getFromCache(cacheKey, c.env, false) as ApiKeyMetadata | null;
 
     if (!result) {
-        throw new HTTPError('Invalid API key', 401);
+        throw new HTTPError(`Invalid API key (${apiKey})`, 401);
     }
 
     if (result.status === 'inactive') {
-        throw new HTTPError('Inactive API key', 403);
+        throw new HTTPError(`Inactive API key (${apiKey})`, 403);
     }
 
     const allowedPublication = validateSubstackPublicationURL(result.allowedPublication);
     if (!allowedPublication) {
-        throw new HTTPError('Allowed publication not found for API key', 403);
+        throw new HTTPError(`API key does not have a valid allowed publication`, 403);
     }
 
     c.header('X-API-Key-Created-At', result.createdAt);
