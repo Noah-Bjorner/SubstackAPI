@@ -15,7 +15,7 @@ postsRoutes.get('/posts/search', async (c) => {
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)
 		console.error({event: LOG_IDENTIFIER, status: 'failed', error: message, errorCode: statusCode})
-		return c.json({error: message}, statusCode)
+		return c.json({code: statusCode, message: message}, statusCode)
 	}
 })
 
@@ -29,7 +29,7 @@ postsRoutes.get('/posts/top', async (c) => {
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)
 		console.error({event: LOG_IDENTIFIER, status: 'failed', error: message, errorCode: statusCode})
-		return c.json({error: message}, statusCode)
+		return c.json({code: statusCode, message: message}, statusCode)
 	}
 })
 
@@ -43,7 +43,7 @@ postsRoutes.get('/posts/latest', async (c) => {
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)
 		console.error({event: LOG_IDENTIFIER, status: 'failed', error: message, errorCode: statusCode})
-		return c.json({error: message}, statusCode)
+		return c.json({code: statusCode, message: message}, statusCode)
 	}
 })
 
@@ -58,7 +58,7 @@ postsRoutes.get('/post', async (c) => {
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)
 		console.error({event: LOG_IDENTIFIER, status: 'failed', error: message, errorCode: statusCode})
-		return c.json({error: message}, statusCode)
+		return c.json({code: statusCode, message: message}, statusCode)
 	}
 })
 

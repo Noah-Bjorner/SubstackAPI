@@ -15,7 +15,7 @@ apiKeyRoutes.get('/generate', async (c) => {
 	} catch (error) {
 		const {message, statusCode} = handleEndpointError(error)
         console.error({event: LOG_IDENTIFIER, status: 'failed', error: message, errorCode: statusCode})
-		return c.json({error: message}, statusCode)
+		return c.json({code: statusCode, message: message}, statusCode)
 	}
 })
 

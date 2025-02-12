@@ -20,7 +20,7 @@ export const middleware = () => {
         } catch (error) {
             const {message, statusCode, headers } = handleEndpointError(error)
             console.error({event: 'middleware_denied', error: message, errorCode: statusCode})
-            return c.json({error: message}, statusCode, headers)
+            return c.json({code: statusCode, message: message}, statusCode, headers)
         }
     };
 };
