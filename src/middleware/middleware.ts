@@ -5,8 +5,6 @@ import { handleEndpointError } from "../utils/errors";
 import { AppBindings } from "../index";
 
 
-//does rate limit work?
-
 export const middleware = () => {
     return async (c: Context<AppBindings>, next: () => Promise<void>) => {
         try {
