@@ -42,6 +42,8 @@ export interface JSONSuccessResponse<T> {
         source?: string
         publication_url?: string
         posts_count?: number
+        offset?: number
+        limit?: number
     }
 }
 

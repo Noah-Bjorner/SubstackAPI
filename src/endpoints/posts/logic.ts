@@ -14,7 +14,7 @@ import { searchPosts } from '../../services/search';
 
 
 
-export async function getSearchedPosts(c: Context<AppBindings>, publicationURL: string, query: string) {
+export async function getSearchedPosts(c: Context<AppBindings>, publicationURL: string, query: string, limit: number, offset: number) {
     
     if (!hasAccessToPublication(c, publicationURL)) {
         throw new HTTPError('API key does not have access to this substack publication.', 403)
@@ -34,7 +34,8 @@ export async function getSearchedPosts(c: Context<AppBindings>, publicationURL: 
     
     const {posts, source: postsSource} = await getAllPosts(validatedPublicationURL, env, ctx)
     const searchedPosts = searchPosts(posts, query)
-    const response = createPostsListResponse(searchedPosts, postsSource, validatedPublicationURL)
+    const sortedPosts = sortPosts(searchedPosts, 'search', limit, offset)
+    const response = createPostsListResponse(sortedPosts, postsSource, validatedPublicationURL, limit, offset)
     return response
 }
 
@@ -42,8 +43,7 @@ export async function getSearchedPosts(c: Context<AppBindings>, publicationURL: 
 
 
 
-export async function getPosts(c: Context<AppBindings>, publicationURL: string, sort: 'new' | 'top'): Promise<JSONSuccessResponse<SubstackPost[]>>  {
-    
+export async function getPosts(c: Context<AppBindings>, publicationURL: string, sort: 'new' | 'top', limit: number, offset: number): Promise<JSONSuccessResponse<SubstackPost[]>>  {
     if (!hasAccessToPublication(c, publicationURL)) {
         throw new HTTPError('API key does not have access to this substack publication.', 403)
     }
@@ -56,23 +56,22 @@ export async function getPosts(c: Context<AppBindings>, publicationURL: string, 
     const env = c.env
     const ctx = c.executionCtx as ExecutionContext
 
-    const cacheKey = `results:${validatedPublicationURL}:posts:${sort}`
+    const cacheKey = `results:${validatedPublicationURL}:posts:${sort}-${limit}-${offset}`
     const cachedResults = await getFromCache(cacheKey, env) as SubstackPost[]
     if (cachedResults) {
-        const response = createPostsListResponse(cachedResults, 'cache', validatedPublicationURL)
+        const response = createPostsListResponse(cachedResults, 'cache', validatedPublicationURL, limit, offset)
         return response
     }
 
     const {posts, source: postsSource} = await getAllPosts(validatedPublicationURL, env, ctx)
 
-    const sortedPostsLimit = 25
-    const sortedPosts = sortPosts(posts, sort, sortedPostsLimit)
+    const sortedPosts = sortPosts(posts, sort, limit, offset)
     if (!sortedPosts) {
         throw new HTTPError(`Posts not found for "${validatedPublicationURL}" after trying cache`, 404)
     }
 
     tryStoreInCache(cacheKey, sortedPosts, env, sort === 'new' ? '12h' : '7d', ctx)
-    const response = createPostsListResponse(sortedPosts, postsSource, validatedPublicationURL)
+    const response = createPostsListResponse(sortedPosts, postsSource, validatedPublicationURL, limit, offset)
     return response
     
 }
@@ -185,7 +184,9 @@ function createPostResponse(
 function createPostsListResponse(
     data: SubstackPost[],
     source: 'cache' | 'api' | 'rss',
-    publicationURL: string
+    publicationURL: string,
+    limit: number,
+    offset: number
 ) : JSONSuccessResponse<SubstackPost[]> {
     return {
         data,
@@ -193,7 +194,9 @@ function createPostsListResponse(
             timestamp: Date.now(),
             source,
             publication_url: publicationURL,
-            posts_count: data.length
+            posts_count: data.length,
+            offset,
+            limit
         }
     }
 }
@@ -226,11 +229,13 @@ async function getAllPosts(
 }
 
 
-function sortPosts(posts: SubstackPost[], sort: 'new' | 'top', limit: number): SubstackPost[] {
+function sortPosts(posts: SubstackPost[], sort: 'new' | 'top' | 'search', limit: number, offset: number): SubstackPost[] {
     if (sort === 'new') {
-        return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, limit)
+        return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(offset, offset + limit)
     } else if (sort === 'top') {
-        return posts.sort((a, b) => b.likes - a.likes).slice(0, limit)
+        return posts.sort((a, b) => b.likes - a.likes).slice(offset, offset + limit)
+    } else if (sort === 'search') {
+        return posts.slice(offset, offset + limit)
     } else {
         throw new HTTPError('Invalid sort parameter', 400)
     }

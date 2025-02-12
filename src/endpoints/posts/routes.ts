@@ -8,8 +8,8 @@ const postsRoutes = new Hono<AppBindings>();
 postsRoutes.get('/posts/search', async (c) => {
 	const LOG_IDENTIFIER = 'search_posts_endpoint'
 	try {
-		const { publication_url, query } = c.req.query()
-		const posts = await getSearchedPosts(c, publication_url, query)
+		const { publication_url, query, limit = '25', offset = '0' } = c.req.query()
+		const posts = await getSearchedPosts(c, publication_url, query, parseInt(limit), parseInt(offset))
 		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: posts.metadata.source, publication_url: posts.metadata.publication_url, posts_count: posts.data.length})
 		return c.json(posts)
 	} catch (error) {
@@ -22,8 +22,8 @@ postsRoutes.get('/posts/search', async (c) => {
 postsRoutes.get('/posts/top', async (c) => {
 	const LOG_IDENTIFIER = 'top_posts_endpoint'
 	try {
-		const { publication_url } = c.req.query()
-		const posts = await getPosts(c,publication_url, 'top')
+		const { publication_url, limit = '25', offset = '0' } = c.req.query()
+		const posts = await getPosts(c, publication_url, 'top', parseInt(limit), parseInt(offset))
 		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: posts.metadata.source, publication_url: posts.metadata.publication_url, posts_count: posts.data.length})
 		return c.json(posts)
 	} catch (error) {
@@ -36,8 +36,8 @@ postsRoutes.get('/posts/top', async (c) => {
 postsRoutes.get('/posts/latest', async (c) => {
 	const LOG_IDENTIFIER = 'latest_posts_endpoint'
 	try {
-		const { publication_url } = c.req.query()
-		const posts = await getPosts(c, publication_url, 'new')
+		const { publication_url, limit = '25', offset = '0' } = c.req.query()
+		const posts = await getPosts(c, publication_url, 'new', parseInt(limit), parseInt(offset))
 		console.log({event: LOG_IDENTIFIER, status: 'succeeded', source: posts.metadata.source, publication_url: posts.metadata.publication_url, posts_count: posts.data.length})
 		return c.json(posts)
 	} catch (error) {
