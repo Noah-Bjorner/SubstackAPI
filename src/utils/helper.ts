@@ -1,4 +1,5 @@
 export const validateSubstackPublicationURL = (url: string): string | null => {
+    if (url === '*') return url;    
     if (!url) return null
     if (url.length < 4 || url.length > 80) return null
     const cleanUrl = url.trim().toLowerCase()
