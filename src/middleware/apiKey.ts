@@ -70,22 +70,22 @@ export enum ALL_POSSIBLE_PATHS {
 }
 
 function getRateLimitConfig(path: string, apiKey: string): RateLimitConfig {
-    if (apiKey.startsWith('sk_live')) {
-        switch (path) {
-            case ALL_POSSIBLE_PATHS.POSTS_LATEST:
-                return { requests: 10, window: 60 }; // 10 requests per minute
-            case ALL_POSSIBLE_PATHS.POSTS_TOP:
-                return { requests: 10, window: 60 }; // 10 requests per minute
-            case ALL_POSSIBLE_PATHS.POSTS_SEARCH:
-                return { requests: 20, window: 60 }; // 20 requests per minute
-            case ALL_POSSIBLE_PATHS.POST:
-                return { requests: 15, window: 60 }; // 15 requests per minute
-            case ALL_POSSIBLE_PATHS.API_KEY_GENERATE:
-                return { requests: 3, window: 86400 }; // 3 requests per day
-            case ALL_POSSIBLE_PATHS.API_KEY_VALIDATE:
-                return { requests: 5, window: 60 }; // 5 request per minute
-        }
+    const isLiveKey = apiKey.startsWith('sk_live')
+    const fallbackRateLimitConfig = { requests: 3, window: 60 }; // 3 requests per minute
+    switch (path) {
+        case ALL_POSSIBLE_PATHS.POSTS_LATEST:
+            return isLiveKey ? { requests: 10, window: 60 } : fallbackRateLimitConfig; // 10 requests per minute
+        case ALL_POSSIBLE_PATHS.POSTS_TOP:
+            return isLiveKey ? { requests: 10, window: 60 } : fallbackRateLimitConfig; // 10 requests per minute
+        case ALL_POSSIBLE_PATHS.POSTS_SEARCH:
+            return isLiveKey ? { requests: 20, window: 60 } : fallbackRateLimitConfig; // 20 requests per minute
+        case ALL_POSSIBLE_PATHS.POST:
+            return isLiveKey ? { requests: 15, window: 60 } : fallbackRateLimitConfig; // 15 requests per minute
+        case ALL_POSSIBLE_PATHS.API_KEY_GENERATE:
+            return { requests: 3, window: 86400 }; // 3 requests per day
+        case ALL_POSSIBLE_PATHS.API_KEY_VALIDATE:
+            return isLiveKey ? { requests: 5, window: 60 } : fallbackRateLimitConfig; // 5 request per minute
+        default:
+            return fallbackRateLimitConfig;
     }
-
-    return { requests: 3, window: 60 }; // 3 requests per minute
 }
