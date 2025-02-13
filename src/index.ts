@@ -16,7 +16,10 @@ const app = new Hono<AppBindings>();
 app.use('/*', cors({
 	origin: '*',
 	allowMethods: ['GET', 'POST'],
-	allowHeaders: ['Content-Type'],
+	allowHeaders: [
+		'Content-Type',
+		'X-API-Key',
+	],
 	exposeHeaders: [
 		'Content-Type', 
 		'X-Cache-Status', 

@@ -7,7 +7,7 @@ export const storeInCache = async (
     key: string, 
     value: any, 
     env: Env,
-    expirationSeconds: number = 30,
+    expirationSeconds: number | undefined,
     compress: boolean = true    
 ) => {
     try {
