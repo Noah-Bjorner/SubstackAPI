@@ -5,10 +5,10 @@ import { AppBindings } from '../../index';
 
 const apiKeyRoutes = new Hono<AppBindings>();
 
-apiKeyRoutes.get('/generate', async (c) => {
+apiKeyRoutes.post('/generate', async (c) => {
 	const LOG_IDENTIFIER = 'generate_api_key_endpoint'
 	try {
-		const { email, allowed_publication } = c.req.query()
+		const { email, allowed_publication } = await c.req.json()
 		const apiKey = await getNewApiKey(c.env, email, allowed_publication)
         console.log({event: LOG_IDENTIFIER, status: 'succeeded', issuedTo: apiKey.metadata.issuedTo})
         return c.text(apiKey.key)
