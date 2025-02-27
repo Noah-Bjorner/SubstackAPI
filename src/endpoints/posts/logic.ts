@@ -213,7 +213,7 @@ async function getAllPosts(
         return {posts: cachedResults, source: 'cache'}
     }
 
-    const apiPosts = await getSubstackPostsViaAPI(publicationURL, 'top', 0, 50)
+    const apiPosts = await getSubstackPostsViaAPI(publicationURL, 'new', 0, 50)
     if (apiPosts) {
         tryStoreInCache(cacheKey, apiPosts, env, '1d', ctx)
         return {posts: apiPosts, source: 'api'} 
